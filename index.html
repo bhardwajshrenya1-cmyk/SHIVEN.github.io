@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dino Destroyer 3D</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+<div id="ui">Dino Destroyer | WASD Move | SPACE Destroy</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Ground
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshStandardMaterial({ color: 0x228B22 })
+);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+// Light
+const light = new THREE.DirectionalLight(0xffffff, 2);
+light.position.set(20, 30, 20);
+scene.add(light);
+
+scene.add(new THREE.AmbientLight(0xffffff, 1));
+
+// Dino
+const dino = new THREE.Mesh(
+    new THREE.BoxGeometry(3, 4, 5),
+    new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+);
+dino.position.y = 2;
+scene.add(dino);
+
+// Buildings
+const buildings = [];
+
+for(let i=0;i<60;i++){
+    const h = Math.random()*15 + 5;
+
+    const building = new THREE.Mesh(
+        new THREE.BoxGeometry(4,h,4),
+        new THREE.MeshStandardMaterial({
+            color: Math.random()*0xffffff
+        })
+    );
+
+    building.position.set(
+        (Math.random()-0.5)*120,
+        h/2,
+        (Math.random()-0.5)*120
+    );
+
+    scene.add(building);
+    buildings.push(building);
+}
+
+camera.position.set(0,10,15);
+
+const keys = {};
+
+document.addEventListener('keydown', e=>{
+    keys[e.key.toLowerCase()] = true;
+
+    if(e.code === "Space"){
+        destroyBuildings();
+    }
+});
+
+document.addEventListener('keyup', e=>{
+    keys[e.key.toLowerCase()] = false;
+});
+
+function destroyBuildings(){
+    for(let i=buildings.length-1;i>=0;i--){
+        const b = buildings[i];
+
+        const dx = b.position.x - dino.position.x;
+        const dz = b.position.z - dino.position.z;
+
+        const dist = Math.sqrt(dx*dx + dz*dz);
+
+        if(dist < 10){
+            scene.remove(b);
+            buildings.splice(i,1);
+        }
+    }
+}
+
+function animate(){
+    requestAnimationFrame(animate);
+
+    const speed = 0.3;
+
+    if(keys["w"]) dino.position.z -= speed;
+    if(keys["s"]) dino.position.z += speed;
+    if(keys["a"]) dino.position.x -= speed;
+    if(keys["d"]) dino.position.x += speed;
+
+    camera.position.x = dino.position.x;
+    camera.position.z = dino.position.z + 15;
+    camera.lookAt(dino.position);
+
+    renderer.render(scene,camera);
+}
+
+animate();
+
+window.addEventListener("resize", ()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+});
+</script>
+</body>
+</html>
